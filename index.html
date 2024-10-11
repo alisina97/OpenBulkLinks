@@ -50,7 +50,7 @@
                     currentIndex++;
                     setTimeout(downloadNextImage, downloadDelay);  // Add a delay before downloading the next image
                 } else {
-                    alert('All images have been downloaded.');
+                    console.log('All images have been downloaded.');
                 }
             }
 
@@ -59,7 +59,13 @@
 
         function downloadImage(url, filename) {
             fetch(url)
-                .then(response => response.blob())
+                .then(response => {
+                    if (!response.ok) {
+                        // Skip the download if the response is not ok (failed download)
+                        return Promise.reject();
+                    }
+                    return response.blob();
+                })
                 .then(blob => {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -70,7 +76,9 @@
                     a.click();
                     window.URL.revokeObjectURL(url);
                 })
-                .catch(() => alert(`Failed to download image from ${url}`));
+                .catch(() => {
+                    // Skip failed download without alert
+                });
         }
     </script>
 
