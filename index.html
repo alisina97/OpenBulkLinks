@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Images from Text File with Sequential Downloading</title>
+    <title>Download Images in Batches from Text File</title>
 </head>
 <body>
 
     <h1>Download Images from .txt File</h1>
     <input type="file" id="fileInput" accept=".txt">
     <button id="loadLinksBtn">Load Image URLs</button>
-    <button id="downloadImagesBtn" disabled>Download All Images</button>
+    <button id="downloadImagesBtn" disabled>Download Next Batch of 20 Images</button>
 
     <script>
         let links = [];
-        const downloadDelay = 4000; // Delay in milliseconds (4 seconds)
+        const batchSize = 20; // Number of images to download in each batch
+        const downloadDelay = 1000; // Delay in milliseconds (1 second)
+        let currentIndex = 0;
 
         document.getElementById('loadLinksBtn').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
@@ -32,7 +34,7 @@
 
                 if (links.length > 0) {
                     document.getElementById('downloadImagesBtn').disabled = false;
-                    alert('Links loaded. Click "Download All Images" to start downloading.');
+                    alert('Links loaded. Click "Download Next Batch of 20 Images" to start downloading.');
                 } else {
                     alert('No links found in the file.');
                 }
@@ -42,27 +44,43 @@
         });
 
         document.getElementById('downloadImagesBtn').addEventListener('click', function() {
-            downloadImagesSequentially(0); // Start downloading from the first image
+            downloadNextBatch();
         });
 
-        function downloadImagesSequentially(index) {
-            if (index >= links.length) {
-                console.log('All images have been downloaded.');
+        function downloadNextBatch() {
+            const start = currentIndex;
+            const end = Math.min(currentIndex + batchSize, links.length);
+            
+            if (start >= links.length) {
+                alert('All images have been downloaded.');
                 return;
             }
 
-            downloadImage(links[index], `image_${index + 1}`)
-                .then(() => {
-                    setTimeout(() => {
-                        downloadImagesSequentially(index + 1);  // Proceed to the next image after the delay
-                    }, downloadDelay);
-                })
-                .catch(() => {
-                    // Skip failed download and proceed to the next image
-                    setTimeout(() => {
-                        downloadImagesSequentially(index + 1);  // Proceed even if one download fails
-                    }, downloadDelay);
-                });
+            document.getElementById('downloadImagesBtn').disabled = true; // Disable button during batch download
+
+            function downloadBatchSequentially(index) {
+                if (index >= end) {
+                    currentIndex = end; // Update current index for the next batch
+                    document.getElementById('downloadImagesBtn').disabled = false; // Re-enable the button for next batch
+                    alert(`Downloaded ${index - start} images. Click to download the next batch.`);
+                    return;
+                }
+
+                downloadImage(links[index], `image_${index + 1}`)
+                    .then(() => {
+                        setTimeout(() => {
+                            downloadBatchSequentially(index + 1);
+                        }, downloadDelay);
+                    })
+                    .catch(() => {
+                        // Skip failed download and move to the next
+                        setTimeout(() => {
+                            downloadBatchSequentially(index + 1);
+                        }, downloadDelay);
+                    });
+            }
+
+            downloadBatchSequentially(start);
         }
 
         function downloadImage(url, filename) {
