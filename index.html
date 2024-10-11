@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Links from Text File</title>
+    <title>Download Images from Text File</title>
 </head>
 <body>
 
-    <h1>Open Links from .txt File</h1>
+    <h1>Download Images from .txt File</h1>
     <input type="file" id="fileInput" accept=".txt">
-    <button id="loadLinksBtn">Load Links</button>
-    <button id="openNextLinkBtn" disabled>Open Next Link</button>
+    <button id="loadLinksBtn">Load Image URLs</button>
+    <button id="downloadImagesBtn" disabled>Download All Images</button>
 
     <script>
         let links = [];
-        let currentIndex = 0;
 
         document.getElementById('loadLinksBtn').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
@@ -29,11 +28,10 @@
 
             reader.onload = function(event) {
                 links = event.target.result.split('\n').map(line => line.trim()).filter(line => line !== '');
-                currentIndex = 0;
-
+                
                 if (links.length > 0) {
-                    document.getElementById('openNextLinkBtn').disabled = false;
-                    alert('Links loaded. Click "Open Next Link" to open the first link.');
+                    document.getElementById('downloadImagesBtn').disabled = false;
+                    alert('Links loaded. Click "Download All Images" to download.');
                 } else {
                     alert('No links found in the file.');
                 }
@@ -42,17 +40,27 @@
             reader.readAsText(file);
         });
 
-        document.getElementById('openNextLinkBtn').addEventListener('click', function() {
-            if (currentIndex < links.length) {
-                window.open(links[currentIndex], '_blank');
-                currentIndex++;
-
-                if (currentIndex >= links.length) {
-                    alert('All links have been opened.');
-                    document.getElementById('openNextLinkBtn').disabled = true;
-                }
-            }
+        document.getElementById('downloadImagesBtn').addEventListener('click', function() {
+            links.forEach((url, index) => {
+                downloadImage(url, `image_${index + 1}`);
+            });
         });
+
+        function downloadImage(url, filename) {
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(() => alert(`Failed to download image from ${url}`));
+        }
     </script>
 
 </body>
