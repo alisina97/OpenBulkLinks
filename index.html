@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Images from Text File</title>
+    <title>Download Images from Text File with Delay</title>
 </head>
 <body>
 
@@ -14,6 +14,7 @@
 
     <script>
         let links = [];
+        const downloadDelay = 2000; // Delay in milliseconds (2 seconds)
 
         document.getElementById('loadLinksBtn').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
@@ -28,10 +29,10 @@
 
             reader.onload = function(event) {
                 links = event.target.result.split('\n').map(line => line.trim()).filter(line => line !== '');
-                
+
                 if (links.length > 0) {
                     document.getElementById('downloadImagesBtn').disabled = false;
-                    alert('Links loaded. Click "Download All Images" to download.');
+                    alert('Links loaded. Click "Download All Images" to start downloading.');
                 } else {
                     alert('No links found in the file.');
                 }
@@ -41,9 +42,19 @@
         });
 
         document.getElementById('downloadImagesBtn').addEventListener('click', function() {
-            links.forEach((url, index) => {
-                downloadImage(url, `image_${index + 1}`);
-            });
+            let currentIndex = 0;
+
+            function downloadNextImage() {
+                if (currentIndex < links.length) {
+                    downloadImage(links[currentIndex], `image_${currentIndex + 1}`);
+                    currentIndex++;
+                    setTimeout(downloadNextImage, downloadDelay);  // Add a delay before downloading the next image
+                } else {
+                    alert('All images have been downloaded.');
+                }
+            }
+
+            downloadNextImage();
         });
 
         function downloadImage(url, filename) {
