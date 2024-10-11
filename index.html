@@ -9,33 +9,49 @@
 
     <h1>Open Links from .txt File</h1>
     <input type="file" id="fileInput" accept=".txt">
-    <button id="openLinksBtn">Open Links</button>
+    <button id="loadLinksBtn">Load Links</button>
+    <button id="openNextLinkBtn" disabled>Open Next Link</button>
 
     <script>
-        document.getElementById('openLinksBtn').addEventListener('click', function() {
+        let links = [];
+        let currentIndex = 0;
+
+        document.getElementById('loadLinksBtn').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            
+
             if (!file) {
                 alert('Please select a file.');
                 return;
             }
 
             const reader = new FileReader();
-            
+
             reader.onload = function(event) {
-                const lines = event.target.result.split('\n');
-                lines.forEach((line, index) => {
-                    const trimmedLine = line.trim();
-                    if (trimmedLine) {
-                        setTimeout(() => {
-                            window.open(trimmedLine, '_blank');
-                        }, index * 2000);  // Open each link with a 2-second delay
-                    }
-                });
+                links = event.target.result.split('\n').map(line => line.trim()).filter(line => line !== '');
+                currentIndex = 0;
+
+                if (links.length > 0) {
+                    document.getElementById('openNextLinkBtn').disabled = false;
+                    alert('Links loaded. Click "Open Next Link" to open the first link.');
+                } else {
+                    alert('No links found in the file.');
+                }
             };
 
             reader.readAsText(file);
+        });
+
+        document.getElementById('openNextLinkBtn').addEventListener('click', function() {
+            if (currentIndex < links.length) {
+                window.open(links[currentIndex], '_blank');
+                currentIndex++;
+
+                if (currentIndex >= links.length) {
+                    alert('All links have been opened.');
+                    document.getElementById('openNextLinkBtn').disabled = true;
+                }
+            }
         });
     </script>
 
