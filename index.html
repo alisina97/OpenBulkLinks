@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Images from Text File with Delay</title>
+    <title>Download Images from Text File with Sequential Downloading</title>
 </head>
 <body>
 
@@ -14,7 +14,7 @@
 
     <script>
         let links = [];
-        const downloadDelay = 2000; // Delay in milliseconds (2 seconds)
+        const downloadDelay = 4000; // Delay in milliseconds (4 seconds)
 
         document.getElementById('loadLinksBtn').addEventListener('click', function() {
             const fileInput = document.getElementById('fileInput');
@@ -42,26 +42,33 @@
         });
 
         document.getElementById('downloadImagesBtn').addEventListener('click', function() {
-            let currentIndex = 0;
-
-            function downloadNextImage() {
-                if (currentIndex < links.length) {
-                    downloadImage(links[currentIndex], `image_${currentIndex + 1}`);
-                    currentIndex++;
-                    setTimeout(downloadNextImage, downloadDelay);  // Add a delay before downloading the next image
-                } else {
-                    console.log('All images have been downloaded.');
-                }
-            }
-
-            downloadNextImage();
+            downloadImagesSequentially(0); // Start downloading from the first image
         });
 
+        function downloadImagesSequentially(index) {
+            if (index >= links.length) {
+                console.log('All images have been downloaded.');
+                return;
+            }
+
+            downloadImage(links[index], `image_${index + 1}`)
+                .then(() => {
+                    setTimeout(() => {
+                        downloadImagesSequentially(index + 1);  // Proceed to the next image after the delay
+                    }, downloadDelay);
+                })
+                .catch(() => {
+                    // Skip failed download and proceed to the next image
+                    setTimeout(() => {
+                        downloadImagesSequentially(index + 1);  // Proceed even if one download fails
+                    }, downloadDelay);
+                });
+        }
+
         function downloadImage(url, filename) {
-            fetch(url)
+            return fetch(url)
                 .then(response => {
                     if (!response.ok) {
-                        // Skip the download if the response is not ok (failed download)
                         return Promise.reject();
                     }
                     return response.blob();
@@ -75,9 +82,6 @@
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
-                })
-                .catch(() => {
-                    // Skip failed download without alert
                 });
         }
     </script>
